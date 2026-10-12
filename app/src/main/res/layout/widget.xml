@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="4dp">
+    <TextView android:id="@+id/b0" style="@style/WidgetButton" />
+    <TextView android:id="@+id/b1" style="@style/WidgetButton" />
+    <TextView android:id="@+id/b2" style="@style/WidgetButton" />
+    <TextView android:id="@+id/b3" style="@style/WidgetButton" />
+</LinearLayout>
