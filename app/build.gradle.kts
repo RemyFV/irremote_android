@@ -11,8 +11,9 @@ android {
         applicationId = "remy.irremote"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        // CI passes -PversionCode=<run number> -PversionName=1.0.<run number>
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
+        versionName = findProperty("versionName") as String? ?: "1.0.0"
     }
 
     buildFeatures {
