@@ -787,8 +787,13 @@
   "columns": 3,
   "buttons": [
    {
-    "label": "POWER",
-    "code": "power",
+    "label": "ON",
+    "code": "on",
+    "color": "green"
+   },
+   {
+    "label": "OFF",
+    "code": "off",
     "color": "red"
    },
    {

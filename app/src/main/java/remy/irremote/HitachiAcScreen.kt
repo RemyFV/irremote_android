@@ -34,7 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// fields edit a local copy, SEND transmits it; POWER transmits right away with the fields as shown
+// fields edit a local copy, ON / SEND transmits it with power on, OFF with power off. no toggle: with several
+// units the remembered state is wrong half the time
 @Composable
 fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
     var s by remember { mutableStateOf(HitachiAc.load(ctx)) }
@@ -63,13 +64,13 @@ fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button({ send(s.copy(power = !sent.power)) }, Modifier.weight(1f).height(56.dp),
+            Button({ send(s.copy(power = false)) }, Modifier.weight(1f).height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(buttonColor("red")), contentColor = Color.White)) {
-                Text(if (sent.power) "POWER OFF" else "POWER ON")
+                Text("OFF")
             }
             Button({ send(s.copy(power = true)) }, Modifier.weight(1f).height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(buttonColor("green")), contentColor = Color.White)) {
-                Text("SEND")
+                Text("ON / SEND")
             }
         }
     }

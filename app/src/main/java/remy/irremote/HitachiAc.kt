@@ -55,8 +55,12 @@ object HitachiAc {
         val s = state.fixed()
         prefs(ctx).edit().putBoolean("power", s.power).putInt("mode", s.mode).putInt("temp", s.temp)
             .putInt("fan", s.fan).putBoolean("swingV", s.swingV).putBoolean("swingH", s.swingH).apply()
-        ctx.getSystemService(ConsumerIrManager::class.java)?.takeIf { it.hasIrEmitter() }?.transmit(38000, frame(s))
+        transmit(ctx, frame(s))
         return s
+    }
+
+    fun transmit(ctx: Context, pattern: IntArray) {
+        ctx.getSystemService(ConsumerIrManager::class.java)?.takeIf { it.hasIrEmitter() }?.transmit(38000, pattern)
     }
 
     // one-shot actions for widget buttons (remotes.json "hitachi_ac" entry); anything but power also turns the unit on
@@ -64,6 +68,8 @@ object HitachiAc {
         val s = load(ctx)
         send(ctx, when (action) {
             "power" -> s.copy(power = !s.power)
+            "on" -> s.copy(power = true)
+            "off" -> s.copy(power = false)
             "temp+" -> s.copy(temp = s.temp + 1, power = true)
             "temp-" -> s.copy(temp = s.temp - 1, power = true)
             "fan" -> s.copy(fan = if (s.fan >= FAN_AUTO + 4) FAN_AUTO else s.fan + 1, power = true)
@@ -74,7 +80,8 @@ object HitachiAc {
         })
     }
 
-    fun frame(s: State): IntArray {
+    // or: extra bits per byte index, ORed in before the checksum (DebugReceiver / tools/bitsearch.py)
+    fun frame(s: State, or: Map<Int, Int> = emptyMap()): IntArray {
         val temp = if (s.mode == MODE_FAN) 64 else s.temp
         val b = TEMPLATE.copyOf()
         if (temp == 16) b[9] = 0x09
@@ -84,6 +91,7 @@ object HitachiAc {
         if (s.swingV) b[14] = b[14] or 0x01
         if (s.swingH) b[15] = b[15] or 0x01
         b[17] = if (s.power) 0x80 else 0x00
+        for ((i, v) in or) b[i] = b[i] or v
         b[27] = (1086 - b.take(27).sum()) and 0xFF
         val p = mutableListOf(HDR_MARK, HDR_SPACE)
         for (byte in b) for (i in 0 until 8) p += listOf(BIT_MARK, if ((byte shr i) and 1 == 1) ONE_SPACE else ZERO_SPACE)
