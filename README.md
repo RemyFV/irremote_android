@@ -35,6 +35,10 @@ everything lives in `app/src/main/assets/remotes.json`, edit it and rebuild:
 
 the RC5 and NECx2 encoders produce the same timings as IrCode Finder. the LG codes only send the first frame of the Pronto sequence, irplus also sent a cut-off repeat frame after it.
 
+## reorder buttons
+
+`tools/reorder.py` opens a page on localhost:8765 with the same grid as the app: drag a button onto the spot it should take, save, rebuild. stdlib only.
+
 ## build
 
 JDK 21 and Android SDK 36, then:

@@ -696,17 +696,58 @@
   "protocol": "hitachi_ac",
   "columns": 3,
   "buttons": [
-   { "label": "POWER", "code": "power", "color": "red" },
-   { "label": "TEMP -", "code": "temp-", "color": "blue" },
-   { "label": "TEMP +", "code": "temp+", "color": "blue" },
-   { "label": "AUTO", "code": "mode:auto" },
-   { "label": "HEAT", "code": "mode:heat", "color": "red" },
-   { "label": "COOL", "code": "mode:cool", "color": "blue" },
-   { "label": "DRY", "code": "mode:dry" },
-   { "label": "FAN", "code": "mode:fan" },
-   { "label": "FAN SPEED", "code": "fan", "color": "green" },
-   { "label": "SWING V", "code": "swingV", "color": "yellow" },
-   { "label": "SWING H", "code": "swingH", "color": "yellow" }
+   {
+    "label": "POWER",
+    "code": "power",
+    "color": "red"
+   },
+   {
+    "label": "TEMP -",
+    "code": "temp-",
+    "color": "blue"
+   },
+   {
+    "label": "TEMP +",
+    "code": "temp+",
+    "color": "blue"
+   },
+   {
+    "label": "AUTO",
+    "code": "mode:auto"
+   },
+   {
+    "label": "HEAT",
+    "code": "mode:heat",
+    "color": "red"
+   },
+   {
+    "label": "COOL",
+    "code": "mode:cool",
+    "color": "blue"
+   },
+   {
+    "label": "DRY",
+    "code": "mode:dry"
+   },
+   {
+    "label": "FAN",
+    "code": "mode:fan"
+   },
+   {
+    "label": "FAN SPEED",
+    "code": "fan",
+    "color": "green"
+   },
+   {
+    "label": "SWING V",
+    "code": "swingV",
+    "color": "yellow"
+   },
+   {
+    "label": "SWING H",
+    "code": "swingH",
+    "color": "yellow"
+   }
   ]
  }
 ]
