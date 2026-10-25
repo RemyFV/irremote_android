@@ -690,5 +690,15 @@
     "color": "yellow"
    }
   ]
+ },
+ {
+  "name": "Hitachi AC",
+  "protocol": "hitachi_ac",
+  "columns": 3,
+  "buttons": [
+   { "label": "POWER", "code": "power", "color": "red" },
+   { "label": "TEMP -", "code": "temp-", "color": "blue" },
+   { "label": "TEMP +", "code": "temp+", "color": "blue" }
+  ]
  }
 ]

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -28,10 +29,13 @@ class MainActivity : ComponentActivity() {
                 var tab by remember { mutableIntStateOf(prefs.getInt("tab", 0).coerceIn(remotes.indices)) }
                 val haptic = LocalHapticFeedback.current
                 if (!hasIr) Text("No IR emitter on this device", Modifier.padding(8.dp))
+                var acStatus by remember { mutableStateOf(HitachiAc.status(this@MainActivity)) }
                 RemoteTabs(remotes, tab) { tab = it; prefs.edit().putInt("tab", it).apply() }
+                if (remotes[tab].protocol == "hitachi_ac") Text(acStatus, Modifier.padding(8.dp))
                 RemoteGrid(remotes[tab]) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     Ir.send(this@MainActivity, remotes[tab], remotes[tab].buttons[it])
+                    acStatus = HitachiAc.status(this@MainActivity)
                 }
             }
         }
