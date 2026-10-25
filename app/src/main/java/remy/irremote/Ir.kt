@@ -4,7 +4,10 @@ import android.content.Context
 import android.hardware.ConsumerIrManager
 import org.json.JSONArray
 
-data class IrButton(val label: String, val code: String, val color: String?)
+// type: null for a real button, "blank" for an empty cell, "separator" for a full-width line
+data class IrButton(val label: String, val code: String, val color: String?, val type: String? = null) {
+    val isButton get() = type == null
+}
 data class Remote(val name: String, val protocol: String, val columns: Int, val buttons: List<IrButton>)
 
 object Ir {
@@ -18,12 +21,13 @@ object Ir {
             val bs = r.getJSONArray("buttons")
             Remote(r.getString("name"), r.getString("protocol"), r.getInt("columns"), List(bs.length()) { j ->
                 val b = bs.getJSONObject(j)
-                IrButton(b.getString("label"), b.getString("code"), b.optString("color").ifEmpty { null })
+                IrButton(b.optString("label"), b.optString("code"), b.optString("color").ifEmpty { null }, b.optString("type").ifEmpty { null })
             })
         }.also { cache = it }
     }
 
     fun send(ctx: Context, remote: Remote, button: IrButton) {
+        if (!button.isButton) return
         if (remote.protocol == "hitachi_ac") return HitachiAc.press(ctx, button.code)
         val ir = ctx.getSystemService(ConsumerIrManager::class.java)?.takeIf { it.hasIrEmitter() } ?: return
         val (freq, pattern) = encode(remote.protocol, button.code)

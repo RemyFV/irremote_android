@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
@@ -59,7 +62,13 @@ fun RemoteGrid(remote: Remote, highlighted: (Int) -> Boolean = { false }, onClic
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        itemsIndexed(remote.buttons) { i, b -> RemoteButton(b, highlighted(i)) { onClick(i) } }
+        itemsIndexed(remote.buttons, span = { _, b -> GridItemSpan(if (b.type == "separator") maxLineSpan else 1) }) { i, b ->
+            when (b.type) {
+                "separator" -> HorizontalDivider(color = Color.DarkGray)
+                "blank" -> Spacer(Modifier.height(56.dp))
+                else -> RemoteButton(b, highlighted(i)) { onClick(i) }
+            }
+        }
     }
 
 @Composable
