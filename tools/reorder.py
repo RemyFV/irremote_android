@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# drag and drop editor for the button order in remotes.json. stdlib only, no tkinter on this box.
+# drag and drop editor for the button order in remotes.json: drop on a button to swap the two. stdlib only, no tkinter on this box.
 # usage: tools/reorder.py  then open http://localhost:8765
 import json, webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -31,7 +31,7 @@ function render(){
     d.ondragstart=()=>from=i;
     d.ondragover=e=>{e.preventDefault();d.classList.add('over')};
     d.ondragleave=()=>d.classList.remove('over');
-    d.ondrop=e=>{e.preventDefault();if(from===null||from===i)return;r.buttons.splice(i,0,r.buttons.splice(from,1)[0]);from=null;render()};
+    d.ondrop=e=>{e.preventDefault();if(from===null||from===i)return;[r.buttons[from],r.buttons[i]]=[r.buttons[i],r.buttons[from]];from=null;render()};
     grid.append(d)});
 }
 fetch('/data').then(r=>r.json()).then(d=>{data=d;render()});
