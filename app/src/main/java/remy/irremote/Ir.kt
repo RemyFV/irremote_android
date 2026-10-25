@@ -24,8 +24,9 @@ object Ir {
     }
 
     fun send(ctx: Context, remote: Remote, button: IrButton) {
+        if (remote.protocol == "hitachi_ac") return HitachiAc.press(ctx, button.code)
         val ir = ctx.getSystemService(ConsumerIrManager::class.java)?.takeIf { it.hasIrEmitter() } ?: return
-        val (freq, pattern) = if (remote.protocol == "hitachi_ac") HitachiAc.press(ctx, button.code) else encode(remote.protocol, button.code)
+        val (freq, pattern) = encode(remote.protocol, button.code)
         ir.transmit(freq, pattern)
     }
 
