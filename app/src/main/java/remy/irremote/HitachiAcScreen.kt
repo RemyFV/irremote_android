@@ -15,11 +15,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,7 +85,10 @@ private fun Round(label: String, color: Long, enabled: Boolean, onClick: () -> U
 @Composable
 private fun Toggle(label: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) =
     FilterChip(on, onClick, { Text(label) }, modifier,
-        trailingIcon = if (on) ({ Text("✓", color = Color(0xFF43A047), fontSize = 18.sp) }) else null)
+        trailingIcon = if (on) ({
+            // same check as the segmented rows, material-icons isn't on the classpath for a direct Icon()
+            CompositionLocalProvider(LocalContentColor provides Color(0xFF43A047)) { SegmentedButtonDefaults.Icon(true) }
+        }) else null)
 
 @Composable
 private fun Choice(options: List<Pair<Int, String>>, selected: Int, onSelect: (Int) -> Unit) =
