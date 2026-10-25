@@ -3,17 +3,21 @@
 # the unit keeps its stored schedule and lights an indicator while it's enabled. our plain frame
 # turns the light off, a frame with the right bit set turns it back on, so the unit grades each try.
 # bisection over the candidate bits, you answer what the unit did after each send.
-# usage: tools/bitsearch.py [byte ...]   default bytes 18-26. needs the app installed and adb connected.
+# usage: tools/bitsearch.py [byte[:mask] ...]   default bytes 18-26, "22:0f" = only those bits of byte 22.
+# needs the app installed and adb connected.
 import subprocess, sys, time
 
-BYTES = range(18, 27)
-bits = [(b, i) for b in (list(map(int, sys.argv[1:])) or BYTES) for i in range(8)]
+def bits_of(arg):
+    b, _, m = arg.partition(":")
+    return [(int(b), i) for i in range(8) if int(m or "ff", 16) >> i & 1]
+
+bits = [x for a in (sys.argv[1:] or map(str, range(18, 27))) for x in bits_of(a)]
 
 def send(bits):
     mask = {}
     for b, i in bits:
         mask[b] = mask.get(b, 0) | 1 << i
-    arg = ",".join(f"{b}:{v:02x}" for b, v in sorted(mask.items()))
+    arg = ",".join(f"{b}:{v:02x}" for b, v in sorted(mask.items())) or "18:00"  # am rejects an empty extra
     subprocess.run(["adb", "shell", "am", "broadcast", "-n", "remy.irremote/.DebugReceiver", "--es", "or", arg],
                    check=True, capture_output=True)
     time.sleep(1.5)

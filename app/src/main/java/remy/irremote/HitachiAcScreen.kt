@@ -61,6 +61,7 @@ fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Toggle("Swing V", s.swingV, Modifier.weight(1f)) { s = s.copy(swingV = !s.swingV) }
             Toggle("Swing H", s.swingH, Modifier.weight(1f)) { s = s.copy(swingH = !s.swingH) }
+            Toggle("Schedule", s.schedule, Modifier.weight(1f)) { s = s.copy(schedule = !s.schedule) }
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -103,5 +104,5 @@ private fun label(s: HitachiAc.State): String {
     val mode = HitachiAc.MODES.first { it.first == s.mode }.second
     val fan = HitachiAc.FANS.first { it.first == s.fan }.second.lowercase()
     val swing = listOfNotNull("V".takeIf { s.swingV }, "H".takeIf { s.swingH }).joinToString("+").ifEmpty { "off" }
-    return "$mode ${s.temp}°C  fan $fan  swing $swing  ${if (s.power) "ON" else "OFF"}"
+    return "$mode ${s.temp}°C  fan $fan  swing $swing${if (s.schedule) "  sched" else ""}  ${if (s.power) "ON" else "OFF"}"
 }

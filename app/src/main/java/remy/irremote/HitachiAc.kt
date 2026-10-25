@@ -29,7 +29,7 @@ object HitachiAc {
 
     data class State(
         val power: Boolean = false, val mode: Int = MODE_HEAT, val temp: Int = 23, val fan: Int = FAN_AUTO,
-        val swingV: Boolean = false, val swingH: Boolean = false,
+        val swingV: Boolean = false, val swingH: Boolean = false, val schedule: Boolean = true,
     ) {
         // the real remote won't let you pick these either: dry only has speeds 1-2, fan mode has no auto
         fun fixed() = copy(
@@ -47,14 +47,16 @@ object HitachiAc {
     fun load(ctx: Context): State = prefs(ctx).let { p ->
         val d = State()
         State(p.getBoolean("power", d.power), p.getInt("mode", d.mode), p.getInt("temp", d.temp),
-            p.getInt("fan", d.fan), p.getBoolean("swingV", d.swingV), p.getBoolean("swingH", d.swingH))
+            p.getInt("fan", d.fan), p.getBoolean("swingV", d.swingV), p.getBoolean("swingH", d.swingH),
+            p.getBoolean("schedule", d.schedule))
     }
 
     // saves and transmits; returns what was actually sent (after fixed())
     fun send(ctx: Context, state: State): State {
         val s = state.fixed()
         prefs(ctx).edit().putBoolean("power", s.power).putInt("mode", s.mode).putInt("temp", s.temp)
-            .putInt("fan", s.fan).putBoolean("swingV", s.swingV).putBoolean("swingH", s.swingH).apply()
+            .putInt("fan", s.fan).putBoolean("swingV", s.swingV).putBoolean("swingH", s.swingH)
+            .putBoolean("schedule", s.schedule).apply()
         transmit(ctx, frame(s))
         return s
     }
@@ -75,6 +77,7 @@ object HitachiAc {
             "fan" -> s.copy(fan = if (s.fan >= FAN_AUTO + 4) FAN_AUTO else s.fan + 1, power = true)
             "swingV" -> s.copy(swingV = !s.swingV, power = true)
             "swingH" -> s.copy(swingH = !s.swingH, power = true)
+            "schedule" -> s.copy(schedule = !s.schedule, power = true)
             else -> MODES.firstOrNull { "mode:${it.second.lowercase()}" == action }?.let { s.copy(mode = it.first, power = true) }
                 ?: error("unknown hitachi_ac action $action")
         })
@@ -91,6 +94,9 @@ object HitachiAc {
         if (s.swingV) b[14] = b[14] or 0x01
         if (s.swingH) b[15] = b[15] or 0x01
         b[17] = if (s.power) 0x80 else 0x00
+        // weekly timer enabled: found by tools/bitsearch.py, the unit keeps the schedule stored in it but
+        // disables it on any frame with this bit clear. a bit in bytes 22-26 triggers self clean, not pinned yet
+        if (s.schedule) b[18] = b[18] or 0x01
         for ((i, v) in or) b[i] = b[i] or v
         b[27] = (1086 - b.take(27).sum()) and 0xFF
         val p = mutableListOf(HDR_MARK, HDR_SPACE)

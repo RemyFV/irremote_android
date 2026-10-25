@@ -11,7 +11,7 @@ one tab per remote, same button grid for all of them, plus a home screen widget:
 
 ## hitachi ac
 
-the AC remote is stateful: every press sends the full state (power, mode, temperature, fan speed, swing), so the tab is a form instead of a button grid. set the fields and hit ON / SEND, or OFF to turn the unit off with the same fields. no toggle on purpose: with several units the app cannot know which one is on. the last state sent is kept and shown at the top.
+the AC remote is stateful: every press sends the full state (power, mode, temperature, fan speed, swing), so the tab is a form instead of a button grid. set the fields and hit ON / SEND, or OFF to turn the unit off with the same fields. no toggle on purpose: with several units the app cannot know which one is on. the Schedule chip (on by default) keeps the unit's stored weekly schedule enabled; off disables it like the remote's timer off. the last state sent is kept and shown at the top.
 
 the weekly schedule of the real remote is not supported, nobody has decoded that frame yet.
 
@@ -30,7 +30,7 @@ everything lives in `app/src/main/assets/remotes.json`, edit it and rebuild:
 }
 ```
 
-- `protocol`: `pronto` (full Pronto hex string), `rc5` (3 hex digits, IrCode Finder style), `necx2` (8 hex digits) or `hitachi_ac` (actions: `on`, `off`, `power` (toggle), `temp+`, `temp-`, `fan`, `swingV`, `swingH`, `mode:heat` etc, only used by widgets, the app shows the form)
+- `protocol`: `pronto` (full Pronto hex string), `rc5` (3 hex digits, IrCode Finder style), `necx2` (8 hex digits) or `hitachi_ac` (actions: `on`, `off`, `power` (toggle), `temp+`, `temp-`, `fan`, `swingV`, `swingH`, `schedule`, `mode:heat` etc, only used by widgets, the app shows the form)
 - `color`: `red`, `green`, `blue`, `yellow`, or leave it out for grey
 
 the RC5 and NECx2 encoders produce the same timings as IrCode Finder. the LG codes only send the first frame of the Pronto sequence, irplus also sent a cut-off repeat frame after it.
