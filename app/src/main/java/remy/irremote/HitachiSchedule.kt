@@ -41,7 +41,7 @@ import org.json.JSONObject
 object HitachiSchedule {
     const val MAX = 6
     data class Slot(val hour: Int = 7, val minute: Int = 30, val on: Boolean = true, val temp: Int = 21)
-    data class Schedule(val days: Set<Int> = (1..7).toSet(), val slots: List<Slot> = emptyList())
+    data class Schedule(val days: Set<Int> = (1..7).toSet(), val slots: List<Slot> = listOf(Slot(), Slot(22, 30, false)))
 
     fun load(ctx: Context): Schedule {
         val o = JSONObject(HitachiAc.prefs(ctx).getString("weekly", null) ?: "{}")
@@ -79,7 +79,12 @@ fun ScheduleSection(ctx: Context, send: (HitachiSchedule.Schedule) -> Unit) {
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("schedule (mode from the form above)", Modifier.weight(1f), fontSize = 13.sp)
+            Column(Modifier.weight(1f)) {
+                Text("schedule", fontSize = 13.sp)
+                Text("(mode from the form above)", fontSize = 11.sp)
+            }
+            TextButton({ sch = sch.copy(days = (1..5).toSet()) }) { Text("Mon-Fri") }
+            TextButton({ sch = sch.copy(days = setOf(6, 7)) }) { Text("Sat-Sun") }
             TextButton({ setSlots(slots + HitachiSchedule.Slot()) }, enabled = slots.size < HitachiSchedule.MAX) { Text("+ slot") }
         }
         MultiChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {

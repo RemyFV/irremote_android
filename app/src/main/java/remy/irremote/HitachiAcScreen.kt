@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,7 +45,8 @@ fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
     var sent by remember { mutableStateOf(s) }
     val send = { st: HitachiAc.State -> sent = HitachiAc.send(ctx, st); s = sent; onSend() }
 
-    Column(Modifier.fillMaxWidth().padding(8.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // no scroll: the schedule block sits at the bottom of the screen, 6 slots still fit on a phone
+    Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("last sent: ${label(sent)}", fontSize = 13.sp)
 
         Choice(HitachiAc.MODES, s.mode) { s = s.copy(mode = it) }
@@ -78,6 +79,7 @@ fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
             }
         }
 
+        Spacer(Modifier.weight(1f))
         HorizontalDivider()
         ScheduleSection(ctx) { sent = HitachiSchedule.send(ctx, s, it); s = sent; onSend() }
     }
