@@ -94,9 +94,10 @@ object HitachiAc {
         if (s.swingV) b[14] = b[14] or 0x01
         if (s.swingH) b[15] = b[15] or 0x01
         b[17] = if (s.power) 0x80 else 0x00
-        // weekly timer enabled: found by tools/bitsearch.py, the unit keeps the schedule stored in it but
-        // disables it on any frame with this bit clear. a bit in bytes 22-26 triggers self clean, not pinned yet
-        if (s.schedule) b[18] = b[18] or 0x01
+        // weekly timer enabled (captured from the RAR-6NE1): the unit keeps the schedule stored in it but
+        // disables it on any frame with this bit clear. byte 18 is the sleep timer in minutes, byte 9 the key
+        // code (08 = temp up, the unit does not care), byte 25 bit 1 eco / bit 5 powerful, byte 26 bit 3 silent
+        if (s.schedule) b[22] = b[22] or 0x40
         for ((i, v) in or) b[i] = b[i] or v
         b[27] = (1086 - b.take(27).sum()) and 0xFF
         val p = mutableListOf(HDR_MARK, HDR_SPACE)
