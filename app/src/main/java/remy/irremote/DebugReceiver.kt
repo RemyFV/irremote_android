@@ -11,6 +11,6 @@ class DebugReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val or = intent.getStringExtra("or").orEmpty().split(",").filter { it.isNotBlank() }
             .associate { val (i, v) = it.split(":"); i.toInt() to v.toInt(16) }
-        HitachiAc.transmit(ctx, HitachiAc.frame(HitachiAc.load(ctx), or))
+        HitachiAc.transmit(ctx, listOf(HitachiAc.stateFrame(HitachiAc.load(ctx), 0x11, or)))
     }
 }

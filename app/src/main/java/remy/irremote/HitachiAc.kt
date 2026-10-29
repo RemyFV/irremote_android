@@ -2,10 +2,15 @@ package remy.irremote
 
 import android.content.Context
 import android.hardware.ConsumerIrManager
+import java.util.Calendar
 
-// Hitachi RAR-5E1 / RAR-6NE1 remote: every press sends the whole state (28 bytes, 38 kHz, LSB first),
-// so the app has to remember mode/temp/fan itself. frame layout and timings from HeatpumpIR's
-// HitachiHeatpumpIR.cpp, cross-checked against IRremoteESP8266's HITACHI_AC (same bytes, bit-reversed).
+// Hitachi RAR-6NE1 remote, decoded from captures of the real thing (tools/decode.py on ir-ctl output).
+// 38 kHz, 3400/1700 header, 430 mark, 500 / 1250 space, LSB first. every frame is
+//   01 10 30 40 bf, type, ~type, index<<4 | frames in this key press, payload length, payload, checksum
+// with the checksum chosen so all bytes sum to 0x3e mod 256. a key press sends the 28-byte state frame
+// (type 01), and for power / mode keys the 16-byte clock frame (type 10: yy mm dd hh mm weekday, mon = 1).
+// the unit keeps its own clock and the weekly schedule it was last sent, see HitachiSchedule.
+// the app has to remember mode/temp/fan itself since every frame carries the whole state.
 object HitachiAc {
     private const val HDR_MARK = 3436
     private const val HDR_SPACE = 1640
@@ -14,9 +19,11 @@ object HitachiAc {
     private const val ZERO_SPACE = 500
     private const val GAP = 50_000
 
-    private val TEMPLATE = intArrayOf(
-        0x01, 0x10, 0x30, 0x40, 0xBF, 0x01, 0xFE, 0x11, 0x12, 0x08, 0x00, 0x00, 0x00, 0x00,
-        0x06, 0x06, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00)
+    private val PREFIX = intArrayOf(0x01, 0x10, 0x30, 0x40, 0xBF)
+    // state payload: key code (08 = temp up, the unit ignores it), mode, temp*2 (64 in fan mode), 00, fan,
+    // swing V bit 0, swing H bit 0, 00, power 80, sleep timer minutes, 00 00 00, weekly timer enabled 40,
+    // 80 01, eco 02 / powerful 20, silent 08. the remote sends 0c in the eco byte, meaning unknown, 00 works
+    private val STATE = intArrayOf(0x08, 0, 0, 0, 0, 0x06, 0x06, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x01, 0, 0)
 
     const val MODE_AUTO = 0x02
     const val MODE_HEAT = 0x03
@@ -42,7 +49,7 @@ object HitachiAc {
         )
     }
 
-    private fun prefs(ctx: Context) = ctx.getSharedPreferences("hitachi_ac", Context.MODE_PRIVATE)
+    fun prefs(ctx: Context) = ctx.getSharedPreferences("hitachi_ac", Context.MODE_PRIVATE)
 
     fun load(ctx: Context): State = prefs(ctx).let { p ->
         val d = State()
@@ -51,18 +58,16 @@ object HitachiAc {
             p.getBoolean("schedule", d.schedule))
     }
 
-    // saves and transmits; returns what was actually sent (after fixed())
+    fun save(ctx: Context, s: State) = prefs(ctx).edit().putBoolean("power", s.power).putInt("mode", s.mode)
+        .putInt("temp", s.temp).putInt("fan", s.fan).putBoolean("swingV", s.swingV).putBoolean("swingH", s.swingH)
+        .putBoolean("schedule", s.schedule).apply()
+
+    // saves and transmits state + clock like the remote's power key; returns what was actually sent (after fixed())
     fun send(ctx: Context, state: State): State {
         val s = state.fixed()
-        prefs(ctx).edit().putBoolean("power", s.power).putInt("mode", s.mode).putInt("temp", s.temp)
-            .putInt("fan", s.fan).putBoolean("swingV", s.swingV).putBoolean("swingH", s.swingH)
-            .putBoolean("schedule", s.schedule).apply()
-        transmit(ctx, frame(s))
+        save(ctx, s)
+        transmit(ctx, listOf(stateFrame(s, 0x12), clockFrame(0x22)))
         return s
-    }
-
-    fun transmit(ctx: Context, pattern: IntArray) {
-        ctx.getSystemService(ConsumerIrManager::class.java)?.takeIf { it.hasIrEmitter() }?.transmit(38000, pattern)
     }
 
     // one-shot actions for widget buttons (remotes.json "hitachi_ac" entry); anything but power also turns the unit on
@@ -83,23 +88,39 @@ object HitachiAc {
         })
     }
 
-    // or: extra bits per byte index, ORed in before the checksum (DebugReceiver / tools/bitsearch.py)
-    fun frame(s: State, or: Map<Int, Int> = emptyMap()): IntArray {
-        val temp = if (s.mode == MODE_FAN) 64 else s.temp
-        val b = TEMPLATE.copyOf()
-        if (temp == 16) b[9] = 0x09
-        b[10] = s.mode
-        b[11] = (temp shl 1) and 0xFF
-        b[13] = s.fan
-        if (s.swingV) b[14] = b[14] or 0x01
-        if (s.swingH) b[15] = b[15] or 0x01
-        b[17] = if (s.power) 0x80 else 0x00
-        // weekly timer enabled (captured from the RAR-6NE1): the unit keeps the schedule stored in it but
-        // disables it on any frame with this bit clear. byte 18 is the sleep timer in minutes, byte 9 the key
-        // code (08 = temp up, the unit does not care), byte 25 bit 1 eco / bit 5 powerful, byte 26 bit 3 silent
-        if (s.schedule) b[22] = b[22] or 0x40
+    // or: extra bits per frame byte index, ORed in before the checksum (DebugReceiver / tools/bitsearch.py)
+    fun frame(type: Int, seq: Int, payload: IntArray, or: Map<Int, Int> = emptyMap()): IntArray {
+        val b = PREFIX + intArrayOf(type, type.inv() and 0xFF, seq, payload.size) + payload + 0
         for ((i, v) in or) b[i] = b[i] or v
-        b[27] = (1086 - b.take(27).sum()) and 0xFF
+        b[b.lastIndex] = (0x3E - b.sum()) and 0xFF
+        return b
+    }
+
+    fun stateFrame(s: State, seq: Int, or: Map<Int, Int> = emptyMap()): IntArray {
+        val p = STATE.copyOf()
+        p[1] = s.mode
+        p[2] = ((if (s.mode == MODE_FAN) 64 else s.temp) shl 1) and 0xFF
+        p[4] = s.fan
+        if (s.swingV) p[5] = p[5] or 0x01
+        if (s.swingH) p[6] = p[6] or 0x01
+        if (s.power) p[8] = 0x80
+        if (s.schedule) p[13] = p[13] or 0x40
+        return frame(0x01, seq, p, or)
+    }
+
+    fun clockFrame(seq: Int): IntArray {
+        val c = Calendar.getInstance()
+        return frame(0x10, seq, intArrayOf(c.get(Calendar.YEAR) % 100, c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH),
+            c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), (c.get(Calendar.DAY_OF_WEEK) + 5) % 7 + 1))
+    }
+
+    // transmit() blocks until the pattern is out, so frames go one after the other with GAP between them
+    fun transmit(ctx: Context, frames: List<IntArray>) {
+        val ir = ctx.getSystemService(ConsumerIrManager::class.java)?.takeIf { it.hasIrEmitter() } ?: return
+        for (f in frames) ir.transmit(38000, pulses(f))
+    }
+
+    private fun pulses(b: IntArray): IntArray {
         val p = mutableListOf(HDR_MARK, HDR_SPACE)
         for (byte in b) for (i in 0 until 8) p += listOf(BIT_MARK, if ((byte shr i) and 1 == 1) ONE_SPACE else ZERO_SPACE)
         p += listOf(BIT_MARK, GAP)

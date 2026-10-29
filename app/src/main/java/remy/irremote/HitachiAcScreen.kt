@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SegmentedButton
@@ -42,7 +45,7 @@ fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
     var sent by remember { mutableStateOf(s) }
     val send = { st: HitachiAc.State -> sent = HitachiAc.send(ctx, st); s = sent; onSend() }
 
-    Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(8.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("last sent: ${label(sent)}", fontSize = 13.sp)
 
         Choice(HitachiAc.MODES, s.mode) { s = s.copy(mode = it) }
@@ -74,6 +77,9 @@ fun HitachiAcScreen(ctx: Context, onSend: () -> Unit) {
                 Text("ON / SEND")
             }
         }
+
+        HorizontalDivider()
+        ScheduleSection(ctx) { sent = HitachiSchedule.send(ctx, s, it); s = sent; onSend() }
     }
 }
 
@@ -93,8 +99,8 @@ private fun Toggle(label: String, on: Boolean, modifier: Modifier, onClick: () -
         }) else null)
 
 @Composable
-private fun Choice(options: List<Pair<Int, String>>, selected: Int, onSelect: (Int) -> Unit) =
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+internal fun Choice(options: List<Pair<Int, String>>, selected: Int, modifier: Modifier = Modifier.fillMaxWidth(), onSelect: (Int) -> Unit) =
+    SingleChoiceSegmentedButtonRow(modifier) {
         options.forEachIndexed { i, (v, name) ->
             SegmentedButton(v == selected, { onSelect(v) }, SegmentedButtonDefaults.itemShape(i, options.size)) { Text(name) }
         }
