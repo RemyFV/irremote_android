@@ -13,7 +13,7 @@ one tab per remote, same button grid for all of them, plus a home screen widget:
 
 the AC remote is stateful: every press sends the full state (power, mode, temperature, fan speed, swing), so the tab is a form instead of a button grid. set the fields and hit ON / SEND, or OFF to turn the unit off with the same fields. no toggle on purpose: with several units the app cannot know which one is on. the Schedule chip (on by default) keeps the unit's stored weekly schedule enabled; off disables it like the remote's timer off. the last state sent is kept and shown at the top. ON and OFF also send the phone's clock to the unit, which is what the weekly schedule runs on.
 
-below the buttons is the weekly schedule editor: up to 6 slots, each with its days, a time (10 minute steps) and either ON with a temperature or OFF. the mode is the one selected in the form. SEND SCHEDULE stores it in the unit, replacing whatever was there, the remote's A/B schedules included.
+below the buttons is the weekly schedule editor: the days it applies to, then up to 6 slots with a time (10 minute steps) and either ON with a temperature or OFF. the mode is the one selected in the form. SEND SCHEDULE stores it in the unit, replacing whatever was there, the remote's A/B schedules included.
 
 the weekly schedule of the real remote is not supported, nobody has decoded that frame yet.
 
