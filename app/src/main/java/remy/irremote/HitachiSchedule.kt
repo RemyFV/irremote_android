@@ -44,7 +44,7 @@ object HitachiSchedule {
     data class Schedule(val days: Set<Int> = (1..7).toSet(), val slots: List<Slot> = emptyList())
 
     fun load(ctx: Context): Schedule {
-        val o = JSONObject(HitachiAc.prefs(ctx).getString("schedule", null) ?: "{}")
+        val o = JSONObject(HitachiAc.prefs(ctx).getString("weekly", null) ?: "{}")
         val d = o.optJSONArray("days") ?: return Schedule()
         val a = o.getJSONArray("slots")
         return Schedule((0 until d.length()).map { d.getInt(it) }.toSet(), (0 until a.length()).map { i ->
@@ -56,7 +56,7 @@ object HitachiSchedule {
     fun send(ctx: Context, state: HitachiAc.State, sch: Schedule): HitachiAc.State {
         val json = JSONObject().put("days", JSONArray(sch.days.sorted())).put("slots",
             JSONArray(sch.slots.map { JSONObject().put("h", it.hour).put("m", it.minute).put("on", it.on).put("t", it.temp) }))
-        HitachiAc.prefs(ctx).edit().putString("schedule", json.toString()).apply()
+        HitachiAc.prefs(ctx).edit().putString("weekly", json.toString()).apply()
         val s = state.copy(schedule = true).fixed()
         HitachiAc.save(ctx, s)
         val days = (1..7).map { d ->
