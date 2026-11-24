@@ -42,14 +42,16 @@ object HitachiSchedule {
     const val MAX = 6
     data class Slot(val hour: Int = 7, val minute: Int = 30, val on: Boolean = true, val temp: Int = 21)
     data class Schedule(val days: Set<Int> = (1..7).toSet(), val slots: List<Slot> = listOf(Slot(), Slot(22, 30, false)))
+    private val ORDER = compareBy<Slot>({ it.hour }, { it.minute })
+    fun sorted(l: List<Slot>) = l.sortedWith(ORDER)
 
     fun load(ctx: Context): Schedule {
         val o = JSONObject(HitachiAc.prefs(ctx).getString("weekly", null) ?: "{}")
         val d = o.optJSONArray("days") ?: return Schedule()
         val a = o.getJSONArray("slots")
-        return Schedule((0 until d.length()).map { d.getInt(it) }.toSet(), (0 until a.length()).map { i ->
+        return Schedule((0 until d.length()).map { d.getInt(it) }.toSet(), sorted((0 until a.length()).map { i ->
             a.getJSONObject(i).let { Slot(it.getInt("h"), it.getInt("m"), it.getBoolean("on"), it.getInt("t")) }
-        })
+        }))
     }
 
     // saves, transmits, and returns the state that went with it (schedule flag on, like the remote does)
@@ -60,7 +62,7 @@ object HitachiSchedule {
         val s = state.copy(schedule = true).fixed()
         HitachiAc.save(ctx, s)
         val days = (1..7).map { d ->
-            intArrayOf(d) + (if (d in sch.days) sch.slots.sortedWith(compareBy({ it.hour }, { it.minute })) else emptyList())
+            intArrayOf(d) + (if (d in sch.days) sorted(sch.slots) else emptyList())
                 .flatMap { listOf(if (it.on) it.temp * 2 else 0xFF, (it.hour shl 3) or (it.minute / 10)) }
         }
         HitachiAc.transmit(ctx, listOf(HitachiAc.stateFrame(s, 0x19), HitachiAc.clockFrame(0x29)) +
@@ -74,7 +76,7 @@ object HitachiSchedule {
 fun ScheduleSection(ctx: Context, send: (HitachiSchedule.Schedule) -> Unit) {
     var sch by remember { mutableStateOf(HitachiSchedule.load(ctx)) }
     val slots = sch.slots
-    val setSlots = { l: List<HitachiSchedule.Slot> -> sch = sch.copy(slots = l) }
+    val setSlots = { l: List<HitachiSchedule.Slot> -> sch = sch.copy(slots = HitachiSchedule.sorted(l)) }
     var editing by remember { mutableStateOf<Int?>(null) }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
